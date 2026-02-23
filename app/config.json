@@ -1,0 +1,16 @@
+{
+  "name": "Activity Heatmap",
+  "supportEmail": "support@example.com",
+  "version": "1.0",
+  "items": [
+    {
+      "url": "https://cpellegrinoGT.github.io/addin-heatmap/heatmap.html",
+      "path": "ActivityLink/",
+      "menuName": {
+        "en": "Activity Heatmap"
+      },
+      "svgIcon": "https://cpellegrinoGT.github.io/addin-heatmap/images/icon.svg"
+    }
+  ],
+  "files": {}
+}

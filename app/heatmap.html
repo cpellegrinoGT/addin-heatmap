@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Heatmap</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div id="heatmap-root">
+    <!-- Toolbar -->
+    <div id="heatmap-toolbar">
+      <div class="heatmap-control-group">
+        <label for="heatmap-datasource">Data Source</label>
+        <select id="heatmap-datasource">
+          <option value="gps">GPS Activity (LogRecords)</option>
+          <option value="exceptions">Exception Events</option>
+        </select>
+      </div>
+
+      <div class="heatmap-control-group" id="heatmap-exception-types" style="display:none;">
+        <label>Exception Types</label>
+        <div class="heatmap-checkbox-group">
+          <label><input type="checkbox" value="speeding" checked> Speeding</label>
+          <label><input type="checkbox" value="harshBraking" checked> Harsh Braking</label>
+          <label><input type="checkbox" value="harshAcceleration" checked> Harsh Acceleration</label>
+          <label><input type="checkbox" value="harshCornering" checked> Harsh Cornering</label>
+        </div>
+      </div>
+
+      <div class="heatmap-control-group">
+        <label for="heatmap-vehicle">Vehicle</label>
+        <select id="heatmap-vehicle">
+          <option value="all">All Vehicles</option>
+        </select>
+      </div>
+
+      <div class="heatmap-control-group">
+        <label>Timeframe</label>
+        <div class="heatmap-presets">
+          <button class="heatmap-preset" data-preset="today">Today</button>
+          <button class="heatmap-preset active" data-preset="7days">Last 7 Days</button>
+          <button class="heatmap-preset" data-preset="30days">Last 30 Days</button>
+          <button class="heatmap-preset" data-preset="custom">Custom</button>
+        </div>
+      </div>
+
+      <div class="heatmap-control-group" id="heatmap-custom-dates" style="display:none;">
+        <label for="heatmap-from">From</label>
+        <input type="date" id="heatmap-from" />
+        <label for="heatmap-to">To</label>
+        <input type="date" id="heatmap-to" />
+      </div>
+
+      <div class="heatmap-control-group">
+        <button id="heatmap-apply">Apply</button>
+      </div>
+
+      <div class="heatmap-control-group">
+        <span id="heatmap-stats"></span>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="heatmap-map-wrapper">
+      <div id="heatmap-map"></div>
+      <div id="heatmap-loading" style="display:none;">
+        <div class="heatmap-spinner"></div>
+        <span>Loading data&hellip;</span>
+      </div>
+      <div id="heatmap-empty" style="display:none;">
+        No data found for the selected filters.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
+</html>
