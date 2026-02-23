@@ -74,11 +74,7 @@ geotab.addin.activityHeatmap = function () {
   }
 
   function getSelectedExceptionTypes() {
-    var checked = [];
-    els.exceptionCheckboxes.forEach(function (cb) {
-      if (cb.checked) checked.push(cb.value);
-    });
-    return checked;
+    return [els.exceptionType.value];
   }
 
   function showLoading(show) {
@@ -472,7 +468,7 @@ geotab.addin.activityHeatmap = function () {
       // Cache DOM refs
       els.datasource = $("heatmap-datasource");
       els.exceptionTypes = $("heatmap-exception-types");
-      els.exceptionCheckboxes = document.querySelectorAll("#heatmap-exception-types input[type=checkbox]");
+      els.exceptionType = $("heatmap-exception-type");
       els.vehicle = $("heatmap-vehicle");
       els.fromDate = $("heatmap-from");
       els.toDate = $("heatmap-to");
