@@ -1,0 +1,216 @@
+/* All styles scoped under #heatmap-root to avoid leaking into MyGeotab */
+
+#heatmap-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Toolbar */
+
+#heatmap-root #heatmap-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f5f6f8;
+  border-bottom: 1px solid #ddd;
+  z-index: 1000;
+}
+
+#heatmap-root .heatmap-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#heatmap-root .heatmap-control-group > label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.3px;
+}
+
+#heatmap-root select,
+#heatmap-root input[type="date"] {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+}
+
+#heatmap-root select:focus,
+#heatmap-root input[type="date"]:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
+/* Preset button group */
+
+#heatmap-root .heatmap-presets {
+  display: flex;
+}
+
+#heatmap-root .heatmap-preset {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.15s, color 0.15s;
+}
+
+#heatmap-root .heatmap-preset:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+#heatmap-root .heatmap-preset:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+#heatmap-root .heatmap-preset:not(:first-child) {
+  border-left: none;
+}
+
+#heatmap-root .heatmap-preset:hover {
+  background: #e8ecf0;
+}
+
+#heatmap-root .heatmap-preset.active {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #4a90d9;
+}
+
+#heatmap-root .heatmap-preset.active + .heatmap-preset {
+  border-left-color: #4a90d9;
+}
+
+/* Checkbox group for exception types */
+
+#heatmap-root .heatmap-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#heatmap-root .heatmap-checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: normal;
+  text-transform: none;
+  color: #333;
+  cursor: pointer;
+}
+
+/* Custom dates row */
+
+#heatmap-root #heatmap-custom-dates {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+#heatmap-root #heatmap-custom-dates label {
+  font-size: 13px;
+  font-weight: normal;
+  text-transform: none;
+  color: #555;
+}
+
+/* Apply button */
+
+#heatmap-root #heatmap-apply {
+  padding: 6px 20px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#heatmap-root #heatmap-apply:hover {
+  background: #3a7bc8;
+}
+
+#heatmap-root #heatmap-apply:active {
+  background: #2e66a8;
+}
+
+/* Stats readout */
+
+#heatmap-root #heatmap-stats {
+  font-size: 13px;
+  color: #555;
+  align-self: center;
+  white-space: nowrap;
+}
+
+/* Map area */
+
+#heatmap-root #heatmap-map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+#heatmap-root #heatmap-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading overlay */
+
+#heatmap-root #heatmap-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 900;
+  gap: 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+#heatmap-root .heatmap-spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid #ddd;
+  border-top-color: #4a90d9;
+  border-radius: 50%;
+  animation: heatmap-spin 0.8s linear infinite;
+}
+
+@keyframes heatmap-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+
+#heatmap-root #heatmap-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #888;
+  background: rgba(255, 255, 255, 0.85);
+  z-index: 800;
+}
