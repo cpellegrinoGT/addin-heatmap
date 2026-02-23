@@ -13,13 +13,6 @@ geotab.addin.activityHeatmap = function () {
   var MULTI_CALL_BATCH = 50;
   var GPS_MATCH_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
 
-  var EXCEPTION_KEYWORDS = {
-    speeding: ["speed"],
-    harshBraking: ["harsh brak", "hard brak"],
-    harshAcceleration: ["harsh accel", "hard accel"],
-    harshCornering: ["harsh corner", "hard corner", "harsh turn", "hard turn"]
-  };
-
   // ── State ──────────────────────────────────────────────────────────────
   var map, heatLayer, api;
   var cachedRules = [];
@@ -73,8 +66,8 @@ geotab.addin.activityHeatmap = function () {
     return [{ id: val }];
   }
 
-  function getSelectedExceptionTypes() {
-    return [els.exceptionType.value];
+  function getSelectedRuleId() {
+    return els.exceptionType.value;
   }
 
   function showLoading(show) {
@@ -193,6 +186,22 @@ geotab.addin.activityHeatmap = function () {
     }
   }
 
+  /** Populate the exception rule dropdown. */
+  function populateRules(rules) {
+    var current = els.exceptionType.value;
+    els.exceptionType.innerHTML = '<option value="all">All Rules</option>';
+    rules.sort(function (a, b) { return (a.name || "").localeCompare(b.name || ""); });
+    rules.forEach(function (r) {
+      var opt = document.createElement("option");
+      opt.value = r.id;
+      opt.textContent = r.name || r.id;
+      els.exceptionType.appendChild(opt);
+    });
+    if (current && els.exceptionType.querySelector('option[value="' + current + '"]')) {
+      els.exceptionType.value = current;
+    }
+  }
+
   // ── GPS Mode ───────────────────────────────────────────────────────────
 
   function fetchGpsData(deviceIds, dateRange) {
@@ -269,25 +278,8 @@ geotab.addin.activityHeatmap = function () {
 
   // ── Exception Mode ─────────────────────────────────────────────────────
 
-  function matchesExceptionType(ruleName, selectedTypes) {
-    if (!ruleName) return false;
-    var lower = ruleName.toLowerCase();
-    for (var i = 0; i < selectedTypes.length; i++) {
-      var keywords = EXCEPTION_KEYWORDS[selectedTypes[i]];
-      if (keywords) {
-        for (var j = 0; j < keywords.length; j++) {
-          if (lower.indexOf(keywords[j]) !== -1) return true;
-        }
-      }
-    }
-    return false;
-  }
-
   function fetchExceptionData(deviceIds, dateRange) {
-    var selectedTypes = getSelectedExceptionTypes();
-    if (selectedTypes.length === 0) {
-      return Promise.resolve([]);
-    }
+    var ruleId = getSelectedRuleId();
 
     var exceptionSearch = {
       fromDate: dateRange.from,
@@ -296,80 +288,70 @@ geotab.addin.activityHeatmap = function () {
     if (deviceIds) {
       exceptionSearch.deviceSearch = { id: deviceIds[0].id };
     }
+    if (ruleId !== "all") {
+      exceptionSearch.ruleSearch = { id: ruleId };
+    }
 
-    return loadRules().then(function (rules) {
-      // Build rule id → name map
-      var ruleMap = {};
-      rules.forEach(function (r) { ruleMap[r.id] = r.name; });
+    // Fetch exceptions (server-side filtered by rule when a specific rule is selected)
+    return apiCall("Get", {
+      typeName: "ExceptionEvent",
+      search: exceptionSearch,
+      resultsLimit: 50000
+    }).then(function (exceptions) {
+      if (isAborted()) return [];
+      if (exceptions.length === 0) return [];
 
-      // Fetch exceptions
-      return apiCall("Get", {
-        typeName: "ExceptionEvent",
-        search: exceptionSearch,
-        resultsLimit: 50000
-      }).then(function (exceptions) {
-        if (isAborted()) return [];
-
-        // Filter by selected exception types using rule names
-        var filtered = exceptions.filter(function (e) {
-          var name = ruleMap[e.rule ? e.rule.id : ""] || "";
-          return matchesExceptionType(name, selectedTypes);
-        });
-
-        if (filtered.length === 0) return [];
-
-        // Group exceptions by device
-        var byDevice = {};
-        filtered.forEach(function (e) {
-          var did = e.device ? e.device.id : null;
-          if (!did) return;
-          if (!byDevice[did]) byDevice[did] = [];
-          byDevice[did].push(e);
-        });
-
-        // Fetch LogRecords per device for GPS matching
-        var logCalls = Object.keys(byDevice).map(function (did) {
-          return ["Get", {
-            typeName: "LogRecord",
-            search: { deviceSearch: { id: did }, fromDate: dateRange.from, toDate: dateRange.to },
-            resultsLimit: 50000
-          }];
-        });
-
-        var deviceIdList = Object.keys(byDevice);
-
-        // Batch the log calls
-        var batches = [];
-        for (var i = 0; i < logCalls.length; i += MULTI_CALL_BATCH) {
-          batches.push({ calls: logCalls.slice(i, i + MULTI_CALL_BATCH), ids: deviceIdList.slice(i, i + MULTI_CALL_BATCH) });
-        }
-
-        return batches.reduce(function (chain, batch) {
-          return chain.then(function (accumulated) {
-            if (isAborted()) return accumulated;
-            return apiMultiCall(batch.calls).then(function (results) {
-              results.forEach(function (records, idx) {
-                var did = batch.ids[idx];
-                if (!Array.isArray(records)) return;
-
-                // Sort records by dateTime for binary search
-                records.sort(function (a, b) {
-                  return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
-                });
-
-                // Match each exception to nearest GPS coord
-                byDevice[did].forEach(function (exc) {
-                  var nearest = findNearestRecord(records, exc.activeFrom);
-                  if (nearest && nearest.latitude !== 0 && nearest.longitude !== 0) {
-                    accumulated.push([nearest.latitude, nearest.longitude, 1.0]);
-                  }
-                });
-              });
-              return accumulated;
-            });
-          });
-        }, Promise.resolve([]));
+      // Group exceptions by device
+      var byDevice = {};
+      exceptions.forEach(function (e) {
+        var did = e.device ? e.device.id : null;
+        if (!did) return;
+        if (!byDevice[did]) byDevice[did] = [];
+        byDevice[did].push(e);
       });
+
+      // Fetch LogRecords per device for GPS matching
+      var logCalls = Object.keys(byDevice).map(function (did) {
+        return ["Get", {
+          typeName: "LogRecord",
+          search: { deviceSearch: { id: did }, fromDate: dateRange.from, toDate: dateRange.to },
+          resultsLimit: 50000
+        }];
+      });
+
+      var deviceIdList = Object.keys(byDevice);
+
+      // Batch the log calls
+      var batches = [];
+      for (var i = 0; i < logCalls.length; i += MULTI_CALL_BATCH) {
+        batches.push({ calls: logCalls.slice(i, i + MULTI_CALL_BATCH), ids: deviceIdList.slice(i, i + MULTI_CALL_BATCH) });
+      }
+
+      return batches.reduce(function (chain, batch) {
+        return chain.then(function (accumulated) {
+          if (isAborted()) return accumulated;
+          return apiMultiCall(batch.calls).then(function (results) {
+            results.forEach(function (records, idx) {
+              var did = batch.ids[idx];
+              if (!Array.isArray(records)) return;
+
+              // Sort records by dateTime for binary search
+              records.sort(function (a, b) {
+                return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+              });
+
+              // Match each exception to nearest GPS coord
+              byDevice[did].forEach(function (exc) {
+                var nearest = findNearestRecord(records, exc.activeFrom);
+                if (nearest && nearest.latitude !== 0 && nearest.longitude !== 0) {
+                  accumulated.push([nearest.latitude, nearest.longitude, 1.0]);
+                }
+              });
+            });
+            return accumulated;
+          });
+        });
+      }, Promise.resolve([]));
     });
   }
 
@@ -493,7 +475,7 @@ geotab.addin.activityHeatmap = function () {
       // Load vehicles + rules in parallel
       Promise.all([
         loadDevices(state.getGroupFilter()).then(populateVehicles),
-        loadRules()
+        loadRules().then(populateRules)
       ]).then(function () {
         callback();
       }).catch(function (err) {
